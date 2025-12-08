@@ -6,7 +6,7 @@ set -eu
 # ----------------------
 : "${BACKUP_DEST:=/backup}"
 : "${KEEP_DAYS:=30}"
-: "${DRY_RUN:=off}"
+: "${DRY_RUN:=false}"
 : "${TIMESTAMP:=$(date +%Y%m%d-%H%M%S)}"
 
 : "${SERVERS_FILE:=/config/servers}"
@@ -52,7 +52,7 @@ truenas_backup() {
     backup="${BACKUP_DEST}/${host}-${version}-${TIMESTAMP}.${fileExt}"
 
     # Dry run
-    if [ "$DRY_RUN" = "on" ]; then
+    if [ "$DRY_RUN" = "true" ]; then
         log "[DRY RUN] Would perform backup for ${host}, saving to ${backup}"
         return 0
     fi
@@ -112,3 +112,11 @@ while IFS= read -r line || [ -n "$line" ]; do
     prune_by_timestamp "${host}-*" "$KEEP_DAYS" "$BACKUP_DEST"
 
 done < "$SERVERS_FILE"
+
+# ----------------------
+# Debug: keep container running
+# ----------------------
+if [ "${DEBUG:-false}" = "true" ]; then
+    log "DEBUG mode enabled — container will remain running."
+    tail -f /dev/null
+fi
