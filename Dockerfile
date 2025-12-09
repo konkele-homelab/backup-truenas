@@ -1,4 +1,5 @@
-FROM registry.lab.konkel.us/backup-base:latest
+ARG UPSTREAM_TAG=latest
+FROM registry.lab.konkel.us/backup-base:${UPSTREAM_TAG}
 
 # TrueNAS Backup Script
 ARG SCRIPT_FILE=backup-truenas.sh
