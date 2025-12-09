@@ -1,6 +1,14 @@
 name: Update Tags, Build & Push Production Image Using Upstream Base Image
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile
+      - "**/*.sh"
+    tags:
+      - "v*.*.*"
   repository_dispatch:
     types: [base_image_updated]
   workflow_dispatch:
@@ -103,7 +111,9 @@ jobs:
         with:
           images: ${{ secrets.REGISTRY }}/${{ env.APP }}
           tags: |
-            type=semver,pattern={{version}},include-major=true,include-minor=true
+            type=raw,value=${{ env.NEW_TAG }}
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
 
       - name: Build + push downstream image
