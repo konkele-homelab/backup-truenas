@@ -4,8 +4,12 @@ set -eu
 # ----------------------
 # Default variables
 # ----------------------
-: "${SERVERS_FILE:=/config/servers}"
+: "${BACKUP_DEST:=/backup}"
 : "${KEEP_DAYS:=30}"
+: "${DRY_RUN:=false}"
+: "${TIMESTAMP:=$(date +%Y%m%d-%H%M%S)}"
+
+: "${SERVERS_FILE:=/config/servers}"
 : "${PROTO:=https}"
 : "${SECRETSEED:=true}"
 
@@ -47,6 +51,12 @@ truenas_backup() {
     # Build backup filename
     backup="${BACKUP_DEST}/${host}-${version}-${TIMESTAMP}.${fileExt}"
 
+    # Dry run
+    if [ "$DRY_RUN" = "true" ]; then
+        log "[DRY RUN] Would perform backup for ${host}, saving to ${backup}"
+        return 0
+    fi
+
     # Request configuration backup
     if ! curl -sk -X POST \
         -H "Authorization: Bearer ${apiKey}" \
@@ -69,14 +79,8 @@ truenas_backup() {
 
     # Secure file
     chmod 600 "$backup"
-    if [ -n "${PUID:-}" ] && [ -n "${PGID:-}" ]; then
-        chown "$PUID:$PGID" "$backup"
-    fi
 
     log "Backup saved: ${backup}"
-
-    # Prune old backups (POSIX-safe)
-    prune_by_timestamp "${host}-*.${fileExt}" "$KEEP_DAYS" "$BACKUP_DEST"
 }
 
 # ----------------------
@@ -104,4 +108,15 @@ while IFS= read -r line || [ -n "$line" ]; do
     # Run backup
     truenas_backup "$host" "$api"
 
+    # Prune old backups
+    prune_by_timestamp "${host}-*" "$KEEP_DAYS" "$BACKUP_DEST"
+
 done < "$SERVERS_FILE"
+
+# ----------------------
+# Debug: keep container running
+# ----------------------
+if [ "${DEBUG:-false}" = "true" ]; then
+    log "DEBUG mode enabled — container will remain running."
+    tail -f /dev/null
+fi

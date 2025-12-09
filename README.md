@@ -18,16 +18,24 @@ This repository contains a minimal Docker image to automate TrueNAS configuratio
 
 ## Environment Variables
 
-| Variable       | Default                       | Description |
-|----------------|-------------------------------|-------------|
-| SERVERS_FILE   | `/config/servers`             | Path to file or secret containing TrueNAS credentials (`FQDN:API_KEY`) |
-| PROTO          | `https`                       | Protocol to use when contacting TrueNAS (http/https) |
-| SECRETSEED     | `true`                        | Include secret seed in backup (tar if true, db if false) |
-| BACKUP_DEST    | `/backup`                     | Directory where backups are stored inside the container |
-| KEEP_DAYS      | `30`                          | Number of days to retain backups |
-| USER_UID       | `3000`                        | UID of backup user |
-| USER_GID       | `3000`                        | GID of backup user |
-| TZ             | `America/Chicago`             | Timezone for timestamps |
+| Variable          | Default                       | Description |
+|-------------------|-------------------------------|-------------|
+| SERVERS_FILE      | `/config/servers`      | Path to file or secret containing TrueNAS credentials (`FQDN:API_KEY`)    |
+| PROTO             | `https`                | Protocol to use when contacting TrueNAS (http/https) |
+| SECRETSEED        | `true`                 | Include secret seed in backup (tar if true, db if false) |
+| DEBUG             | `false`                | If `true`, keep container running forever for debug purposes |
+| BACKUP_DEST       | `/backup`              | Directory where backup output is stored |
+| LOG_FILE          | `/var/log/backup.log`  | Persistent log file |
+| EMAIL_ON_SUCCESS  | `false`                | Enable sending email when backup succeeds (`true`/`false`) |
+| EMAIL_ON_FAILURE  | `false`                | Enable sending email when backup fails (`true`/`false`) |
+| EMAIL_TO          | `admin@example.com`    | Recipient of status notifications |
+| EMAIL_FROM        | `backup@example.com`   | Sender of status notifications |
+| APP_BACKUP        | `/default.sh`          | Path to backup script executed by the container |
+| KEEP_DAYS         | `30`                   | Number of days to retain backups |
+| USER_UID          | `3000`                 | UID of backup user |
+| USER_GID          | `3000`                 | GID of backup user |
+| DRY_RUN           | `false`                | If `true`, backup logic logs actions but does not backup or prune anything |
+| TZ                | `UTC`                  | Timezone used for timestamps |
 
 ---
 
