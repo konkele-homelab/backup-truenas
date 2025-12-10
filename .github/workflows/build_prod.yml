@@ -1,4 +1,4 @@
-name: Update Tags, Build & Push Production Image Using Upstream Base Image
+name: Build, Tag, and Release Using Upstream Base Image
 
 on:
   push:
@@ -68,10 +68,16 @@ jobs:
     needs: upstream-version
     outputs:
       new_tag: ${{ steps.tag_version.outputs.new_tag }}
+      changelog: ${{ steps.tag_version.outputs.changelog }}
+      full: ${{ steps.parse.outputs.full }}
+      major: ${{ steps.parse.outputs.major }}
+      minor: ${{ steps.parse.outputs.minor }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Bump version and push tag
         id: tag_version
@@ -79,20 +85,29 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create a GitHub release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ steps.tag_version.outputs.new_tag }}
-          name: Release ${{ steps.tag_version.outputs.new_tag }}
-          body: ${{ steps.tag_version.outputs.changelog }}
+      - name: Parse docker tags
+        id: parse
+        run: |
+          version="${{ steps.tag_version.outputs.new_tag }}"
+          version="${version#v}"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$version"
+
+          echo "full=$version" >> $GITHUB_OUTPUT
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
 
   build:
     runs-on: [self-hosted]
     needs: [version, upstream-version]
     env:
       APP: ${{ github.event.repository.name }}
-      NEW_TAG: ${{ needs.version.outputs.new_tag }}
+      FULL: ${{ needs.version.outputs.full }}
+      MAJOR: ${{ needs.version.outputs.major }}
+      MINOR: ${{ needs.version.outputs.minor }}
       UPSTREAM_TAG: ${{ needs.upstream-version.outputs.upstream_tag }}
+    outputs:
+      built_tag: ${{ env.FULL }}
 
     steps:
       - name: Checkout repository
@@ -105,18 +120,18 @@ jobs:
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_PASS }}
 
-      - name: Extract Docker metadata with semver + latest
+      - name: Extract Docker metadata (raw only)
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ secrets.REGISTRY }}/${{ env.APP }}
           tags: |
-            type=raw,value=${{ env.NEW_TAG }}
-            type=semver,pattern={{major}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ env.FULL }}
+            type=raw,value=${{ env.MAJOR }}.${{ env.MINOR }}
+            type=raw,value=${{ env.MAJOR }}
             type=raw,value=latest
 
-      - name: Build + push downstream image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -124,10 +139,25 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             UPSTREAM_TAG=${{ env.UPSTREAM_TAG }}
-          platforms: linux/amd64     # single-platform = Portainer safe
+          platforms: linux/amd64
+          provenance: false
+          sbom: false
           labels: |
             org.opencontainers.image.created=${{ github.run_started_at }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.repository }}
-            org.opencontainers.image.version=${{ env.NEW_TAG }}
+            org.opencontainers.image.version=${{ env.FULL }}
             org.opencontainers.image.base-version=${{ env.UPSTREAM_TAG }}
+
+  release:
+    name: Publish GitHub Release
+    runs-on: [self-hosted]
+    needs: [version, build]
+
+    steps:
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.version.outputs.new_tag }}
+          name: Release ${{ needs.version.outputs.new_tag }}
+          body: ${{ needs.version.outputs.changelog || 'Automated release' }}
