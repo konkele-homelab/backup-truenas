@@ -43,24 +43,24 @@ jobs:
           ORG: ${{ github.repository_owner }}
           IMAGE_NAME: ${{ steps.extract.outputs.image_name }}
         run: |
-          # 1. Event provided tag
+          # 1. Use tag from repository_dispatch event if provided
           if [ -n "${{ github.event.client_payload.upstream_tag }}" ]; then
-            echo "tag=${{ github.event.client_payload.upstream_tag }}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "Fetching latest upstream release for $ORG/$IMAGE_NAME..."
-
-          tag=$(curl -s \
+            tag="${{ github.event.client_payload.upstream_tag }}"
+          else
+            # 2. Fallback to latest GitHub release
+            echo "Fetching latest upstream release for $ORG/$IMAGE_NAME..."
+            tag=$(curl -s \
               -H "Authorization: token $TOKEN" \
-              https://api.github.com/repos/$ORG/$IMAGE_NAME/releases/latest \
+              "https://api.github.com/repos/$ORG/$IMAGE_NAME/releases/latest" \
               | jq -r '.tag_name')
-
-          if [ "$tag" = "null" ] || [ -z "$tag" ]; then
-            echo "ERROR: Could not determine upstream tag."
-            exit 1
+            if [ "$tag" = "null" ] || [ -z "$tag" ]; then
+              echo "ERROR: Could not determine upstream tag."
+              exit 1
+            fi
           fi
 
+          # Remove leading 'v' if present
+          tag="${tag#v}"
           echo "tag=$tag" >> $GITHUB_OUTPUT
 
   version:
