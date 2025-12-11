@@ -8,6 +8,7 @@ set -eu
 : "${BACKUP_DEST:=/backup}"
 : "${KEEP_DAYS:=30}"
 : "${DRY_RUN:=false}"
+: "${TZ:=America/Chicago}"
 : "${TIMESTAMP:=$(date +%Y%m%d-%H%M%S)}"
 
 : "${SERVERS_FILE:=/config/servers}"

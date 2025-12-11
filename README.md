@@ -36,7 +36,7 @@ This repository contains a minimal Docker image to automate TrueNAS configuratio
 | USER_UID          | `3000`                 | UID of backup user |
 | USER_GID          | `3000`                 | GID of backup user |
 | DRY_RUN           | `false`                | If `true`, backup logic logs actions but does not backup or prune anything |
-| TZ                | `UTC`                  | Timezone used for timestamps |
+| TZ                | `America/Chicago`      | Timezone used for timestamps |
 
 ---
 
