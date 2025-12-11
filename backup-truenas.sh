@@ -4,6 +4,7 @@ set -eu
 # ----------------------
 # Default variables
 # ----------------------
+: "${APP_NAME:=TrueNAS}"
 : "${BACKUP_DEST:=/backup}"
 : "${KEEP_DAYS:=30}"
 : "${DRY_RUN:=false}"
@@ -13,6 +14,7 @@ set -eu
 : "${PROTO:=https}"
 : "${SECRETSEED:=true}"
 
+export APP_NAME
 # ----------------------
 # TrueNAS Backup
 # ----------------------

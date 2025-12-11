@@ -18,8 +18,8 @@ This repository contains a minimal Docker image to automate TrueNAS configuratio
 
 ## Environment Variables
 
-| Variable          | Default                       | Description |
-|-------------------|-------------------------------|-------------|
+| Variable          | Default                | Description |
+|-------------------|------------------------|-------------|
 | SERVERS_FILE      | `/config/servers`      | Path to file or secret containing TrueNAS credentials (`FQDN:API_KEY`)    |
 | PROTO             | `https`                | Protocol to use when contacting TrueNAS (http/https) |
 | SECRETSEED        | `true`                 | Include secret seed in backup (tar if true, db if false) |
@@ -30,6 +30,7 @@ This repository contains a minimal Docker image to automate TrueNAS configuratio
 | EMAIL_ON_FAILURE  | `false`                | Enable sending email when backup fails (`true`/`false`) |
 | EMAIL_TO          | `admin@example.com`    | Recipient of status notifications |
 | EMAIL_FROM        | `backup@example.com`   | Sender of status notifications |
+| APP_NAME          | `TrueNAS`              | Application name in status notification |
 | APP_BACKUP        | `/default.sh`          | Path to backup script executed by the container |
 | KEEP_DAYS         | `30`                   | Number of days to retain backups |
 | USER_UID          | `3000`                 | UID of backup user |
